@@ -12,6 +12,7 @@ output:
         google: JetBrains Mono
     orientation: columns
     vertical_layout: fill
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -20,10 +21,14 @@ library(sidrar)
 library(tidyverse)
 library(deflateBR)
 library(plotly)
+library(lubridate)
+library(shiny)
+
 
 # Install thematic and un-comment for themed static plots (i.e., ggplot2)
- thematic::thematic_rmd()
- 
+ #thematic::thematic_rmd()
+ thematic::thematic_shiny()
+
  
  gera_trimestres<- function(ano){
   
@@ -64,28 +69,72 @@ cnt_vt_precos_correntes <- janitor::clean_names(cnt_vt_precos_correntes)
 
 ```
 
-Column {data-width=650 .tabset}
+Column 
 -----------------------------------------------------------------------
 
-### Chart A
+### Evolução - Valores correntes
 
 ```{r}
 
-graf<-
-cnt_vt_precos_correntes %>%
-  filter(setores_e_subsetores_codigo %in% c("90687", "90691", "90696")) %>%
-  ggplot(aes(x = trimestre_codigo, y = valor, group = setores_e_subsetores, color = setores_e_subsetores)) +
-  geom_line()
+renderPlotly({
+  
+  sel_data<-
+    cnt_vt_precos_correntes %>%
+    filter(setores_e_subsetores_codigo %in% c("90687", "90691", "90696")) %>%
+    mutate(data_nominal = gera_meses_trimestre(trimestre_codigo)) %>%
+    filter(data_nominal == "2020-06-01")
+  
+  
+  
+  graf<-
+    cnt_vt_precos_correntes %>%
+    filter(setores_e_subsetores_codigo %in% c("90687", "90691", "90696")) %>%
+    mutate(data_nominal = gera_meses_trimestre(trimestre_codigo)) %>%
+    ggplot(aes(x = data_nominal, y = valor/10^3, group = setores_e_subsetores, color = setores_e_subsetores)) +
+    geom_line() +
+    geom_point(data = sel_data) +
+    geom_text(data= sel_data, aes(label= str_wrap(paste0(format(data_nominal,"%d/%m/%Y"),": ", round(valor/10^3,1)),10)),color="white") +
+    theme(
+      axis.title.x = element_blank(),
+      panel.background = element_rect(fill="#1d1d1d"),
+      panel.grid = element_line(color=  "#101010"),
+      text= element_text(color = "#101010" )
+        
+    )+
+    labs(
+      y= "Valores em R$ bi"
+    )
+  
+  #graf
+  
+  plotly::ggplotly()
+  
+  
+})
 
-
-plotly::ggplotly()
 
 
 ```
 
-### Chart B
+
+Column 
+-----------------------------------------------------------------------
+
+
+### Evolução - Valores constantes para último trimestre
 
 ```{r}
+
+renderPlotly({
+  
+  sel_data<-
+ cnt_vt_precos_correntes %>%
+  filter(setores_e_subsetores_codigo %in% c("90687", "90691", "90696")) %>%
+  mutate(data_nominal = gera_meses_trimestre(trimestre_codigo)) %>%
+  filter(data_nominal == "2020-06-01") %>%
+  mutate(data_calculo = calculate_next_month(data_nominal)) %>%
+  mutate(valor_constante = deflate(valor,  data_calculo,"09/2023", index= "ipca") ) 
+
 
 graf<-
 cnt_vt_precos_correntes %>%
@@ -93,26 +142,24 @@ cnt_vt_precos_correntes %>%
   mutate(data_nominal = gera_meses_trimestre(trimestre_codigo)) %>%
   mutate(data_calculo = calculate_next_month(data_nominal)) %>%
   mutate(valor_constante = deflate(valor,  data_calculo,"09/2023", index= "ipca") )  %>%
-  ggplot(aes(x = data_nominal, y = valor_constante, group = setores_e_subsetores, color = setores_e_subsetores)) +
-  geom_line()
+  ggplot(aes(x = data_nominal, y = valor_constante/10^3, group = setores_e_subsetores, color = setores_e_subsetores)) +
+  geom_line()+
+  geom_point(data = sel_data) +
+  geom_text(data= sel_data, aes(label= str_wrap(paste0(format(data_nominal,"%d/%m/%Y"),": ", round(valor_constante/10^3,1)),10)),color="white") +
+  theme(
+    axis.title.x = element_blank()
+  )+
+  labs(
+    y= "Valores em R$ bi"
+  )
+  
+
 
 plotly::ggplotly()
 
+  
+})
+
+
 
 ```
-
-Column {data-width=350}
------------------------------------------------------------------------
-
-### Chart C
-
-```{r}
-
-```
-
-### Chart D
-
-```{r}
-
-```
-
