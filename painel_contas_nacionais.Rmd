@@ -26,7 +26,6 @@ library(shiny)
 
 
 # Install thematic and un-comment for themed static plots (i.e., ggplot2)
- #thematic::thematic_rmd()
  thematic::thematic_shiny()
 
  
@@ -72,7 +71,7 @@ cnt_vt_precos_correntes <- janitor::clean_names(cnt_vt_precos_correntes)
 Column 
 -----------------------------------------------------------------------
 
-### Evolução - Valores correntes
+### Evolução trimestral - Valores correntes
 
 ```{r}
 
@@ -95,10 +94,7 @@ renderPlotly({
     geom_point(data = sel_data) +
     geom_text(data= sel_data, aes(label= str_wrap(paste0(format(data_nominal,"%d/%m/%Y"),": ", round(valor/10^3,1)),10)),color="white") +
     theme(
-      axis.title.x = element_blank(),
-      panel.background = element_rect(fill="#1d1d1d"),
-      panel.grid = element_line(color=  "#101010"),
-      text= element_text(color = "#101010" )
+      axis.title.x = element_blank()
         
     )+
     labs(
@@ -121,7 +117,7 @@ Column
 -----------------------------------------------------------------------
 
 
-### Evolução - Valores constantes para último trimestre
+### Evolução trimestral - Valores constantes para último trimestre
 
 ```{r}
 
